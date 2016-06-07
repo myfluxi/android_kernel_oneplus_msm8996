@@ -1022,7 +1022,7 @@ static void ramdump_work_handler(struct work_struct *ramdump)
 	struct device *dev = NULL;
 
 #if !defined(HIF_SDIO)
-#ifdef WLAN_DEBUG
+#ifdef DEBUG
 	int ret;
 #endif
 #endif
@@ -1041,7 +1041,7 @@ static void ramdump_work_handler(struct work_struct *ramdump)
 		dev = ramdump_scn->adf_dev->dev;
 
 #if !defined(HIF_SDIO)
-#ifdef WLAN_DEBUG
+#ifdef DEBUG
 	ret = hif_pci_check_soc_status(ramdump_scn->hif_sc);
 	if (ret)
 		goto out_fail;
