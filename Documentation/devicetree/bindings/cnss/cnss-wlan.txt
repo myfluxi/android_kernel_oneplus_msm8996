@@ -39,6 +39,9 @@ Optional properties:
   - reg-names: Names of the memory regions defined in reg entry
   - wlan-bootstrap-gpio: WLAN_BOOTSTRAP GPIO signal specified by QCA6174
                          which should be drived depending on platforms
+  - vdd-wlan-en-supply: WLAN_EN fixed regulator specified by QCA6174 specifications.
+  - qcom,wlan-en-vreg-support: Boolean property to decide the whether the WLAN_EN pin
+				is a gpio or fixed regulator.
 
 Example:
 
