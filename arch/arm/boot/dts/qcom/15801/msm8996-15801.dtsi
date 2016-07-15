@@ -556,6 +556,7 @@
 			pinctrl-names = "pmx_ts_active", "pmx_ts_suspend";
 			pinctrl-0 = <&ts_active>;
 			pinctrl-1 = <&ts_suspend>;
+			qcom,disable-dma;
 		};
 	};
 
