@@ -101,5 +101,7 @@
 		qcom,cont-splash-enabled;
 		qcom,ulps-enabled;
 		qcom,panel-allow-phy-poweroff;
+		qcom,partial-update-enabled;
+		qcom,panel-roi-alignment = <360 64 360 64 360 64>;
 	};
 };
