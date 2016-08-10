@@ -150,6 +150,8 @@ extern int new_dentry_private_data(struct dentry *dentry);
 extern void free_dentry_private_data(struct dentry *dentry);
 extern struct dentry *sdcardfs_lookup(struct inode *dir, struct dentry *dentry,
 				unsigned int flags);
+extern struct inode *sdcardfs_ilookup(struct super_block *sb,
+				struct inode *lower_inode, userid_t id);
 extern struct inode *sdcardfs_iget(struct super_block *sb,
 				 struct inode *lower_inode, userid_t id);
 extern int sdcardfs_interpose(struct dentry *dentry, struct super_block *sb,
@@ -437,7 +439,7 @@ extern void packagelist_exit(void);
 extern void setup_derived_state(struct inode *inode, perm_t perm, userid_t userid,
 			uid_t uid, bool under_android, struct inode *top);
 extern void get_derived_permission(struct dentry *parent, struct dentry *dentry);
-extern void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, struct dentry *newdentry);
+extern void get_derived_permission_new(struct inode *parent, struct inode *inode, struct dentry *newdentry);
 extern void fixup_top_recursive(struct dentry *parent);
 extern void fixup_perms_recursive(struct dentry *dentry, const char *name, size_t len);
 
