@@ -47,10 +47,10 @@ void setup_derived_state(struct inode *inode, perm_t perm, userid_t userid,
 }
 
 /* While renaming, there is a point where we want the path from dentry, but the name from newdentry */
-void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, struct dentry *newdentry)
+void get_derived_permission_new(struct inode *parent, struct inode *inode, struct dentry *newdentry)
 {
-	struct sdcardfs_inode_info *info = SDCARDFS_I(dentry->d_inode);
-	struct sdcardfs_inode_info *parent_info= SDCARDFS_I(parent->d_inode);
+	struct sdcardfs_inode_info *info = SDCARDFS_I(inode);
+	struct sdcardfs_inode_info *parent_info= SDCARDFS_I(parent);
 	appid_t appid;
 
 	/* By default, each inode inherits from its parent.
@@ -61,7 +61,7 @@ void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, st
 	 * stage of each system call by fix_derived_permission(inode).
 	 */
 
-	inherit_derived_state(parent->d_inode, dentry->d_inode);
+	inherit_derived_state(parent, inode);
 
 	/* Derive custom permissions based on parent and current node */
 	switch (parent_info->perm) {
@@ -113,7 +113,7 @@ void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, st
 
 void get_derived_permission(struct dentry *parent, struct dentry *dentry)
 {
-	get_derived_permission_new(parent, dentry, dentry);
+	get_derived_permission_new(parent->d_inode, dentry->d_inode, dentry);
 }
 
 static int descendant_may_need_fixup(perm_t perm) {
