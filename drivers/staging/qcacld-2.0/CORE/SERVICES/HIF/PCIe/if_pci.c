@@ -2884,7 +2884,7 @@ static int __hif_check_link_status(struct pci_dev *pdev)
 	       __func__, dev_id);
 	sc->recovery = true;
 	vos_set_logp_in_progress(VOS_MODULE_ID_VOSS, TRUE);
-	vos_wlan_pci_link_down();
+	cnss_wlan_pci_link_down();
 	return -EACCES;
 }
 
