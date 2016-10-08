@@ -85,7 +85,6 @@
 
 #define MAX_LAYER_COUNT		0xC
 
-#define MAX_LAYER_COUNT		0xC
 /* hw cursor can only be setup in highest mixer stage */
 #define HW_CURSOR_STAGE(mdata) \
 	(((mdata)->max_target_zorder + MDSS_MDP_STAGE_0) - 1)

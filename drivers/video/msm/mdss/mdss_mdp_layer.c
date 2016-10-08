@@ -1331,20 +1331,6 @@ static int __validate_layers(struct msm_fb_data_type *mfd,
 			}
 		}
 
-        if (pipe_q_type == LAYER_USES_USED_PIPE_Q) {
-        /*
-        * reconfig is allowed on new/destroy pipes. Only used
-        * pipe needs this extra validation.
-        */
-        ret = __validate_layer_reconfig(layer, pipe);
-            if (ret) {
-               pr_err("layer reconfig validation failed=%d\n", ret);
-               mdss_mdp_pipe_unmap(pipe);
-               layer->error_code = ret;
-               goto validate_exit;
-                     }
-        }
-
 		ret = __configure_pipe_params(mfd, layer, pipe,
 			left_blend_pipe, is_single_layer, mixer_mux);
 		if (ret) {

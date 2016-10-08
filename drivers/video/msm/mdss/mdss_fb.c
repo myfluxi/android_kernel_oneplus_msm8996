@@ -589,7 +589,6 @@ static ssize_t mdss_fb_force_panel_dead(struct device *dev,
 		return len;
 	}
 
-	mdss_fb_report_panel_dead(mfd);
 	if (kstrtouint(buf, 0, &pdata->panel_info.panel_force_dead))
 		pr_err("kstrtouint buf error!\n");
 
@@ -1556,10 +1555,7 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 	bool bl_notify = false;
 
 	if (!mfd->unset_bl_level)
-		{
-			mfd->allow_bl_update = true;
-			return;
-		}
+		return;
 	mutex_lock(&mfd->bl_lock);
 	if (!mfd->allow_bl_update) {
 		pdata = dev_get_platdata(&mfd->pdev->dev);
@@ -1783,11 +1779,6 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
 	}
 
 error:
-	{
-		struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-		if (!ctl->panel_data->panel_info.cont_splash_enabled)
-		mfd->first_frame = 1;
-	}
 	return ret;
 }
 
@@ -3439,6 +3430,7 @@ static int __mdss_fb_perform_commit(struct msm_fb_data_type *mfd)
 	struct msm_fb_backup_type *fb_backup = &mfd->msm_fb_backup;
 	int ret = -ENOSYS;
 	u32 new_dsi_mode, dynamic_dsi_switch = 0;
+
 	if (!sync_pt_data->async_wait_fences)
 		mdss_fb_wait_for_fence(sync_pt_data);
 	sync_pt_data->flushed = false;
@@ -3480,11 +3472,6 @@ static int __mdss_fb_perform_commit(struct msm_fb_data_type *mfd)
 			pr_err("pan display failed %x on fb%d\n", ret,
 					mfd->index);
 	}
-	if(mfd->first_frame)
-		{
-			mfd->first_frame = 0;
-			mdss_fb_send_panel_event(mfd, MDSS_EVENT_POST_PANEL_ON, NULL);
-		}
 	if (!ret)
 		mdss_fb_update_backlight(mfd);
 
