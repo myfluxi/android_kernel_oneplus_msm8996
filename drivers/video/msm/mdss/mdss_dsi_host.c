@@ -1117,7 +1117,7 @@ int mdss_dsi_reg_status_check(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 		return 0;
 	}
 
-	pr_err("%s: Checking Register status\n", __func__);
+	pr_debug("%s: Checking Register status\n", __func__);
 
 	mdss_dsi_clk_ctrl(ctrl_pdata, ctrl_pdata->dsi_clk_handle,
 			  MDSS_DSI_ALL_CLKS, MDSS_DSI_CLK_ON);
@@ -1125,7 +1125,6 @@ int mdss_dsi_reg_status_check(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 	sctrl_pdata = mdss_dsi_get_other_ctrl(ctrl_pdata);
 	if (!mdss_dsi_sync_wait_enable(ctrl_pdata)) {
 		ret = mdss_dsi_read_status(ctrl_pdata);
-		pr_err("%x\n",ctrl_pdata->status_buf.data[0]);
 	} else {
 		/*
 		 * Read commands to check ESD status are usually sent at
@@ -2688,6 +2687,7 @@ static int dsi_event_thread(void *data)
 		if (todo & DSI_EV_DSI_FIFO_EMPTY) {
 			__dsi_fifo_error_handler(ctrl, false);
 		}
+
 		if (todo & DSI_EV_DLNx_FIFO_OVERFLOW) {
 			mutex_lock(&dsi_mtx);
 			/*

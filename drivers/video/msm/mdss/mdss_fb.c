@@ -587,7 +587,6 @@ static ssize_t mdss_fb_force_panel_dead(struct device *dev,
 		return len;
 	}
 
-	mdss_fb_report_panel_dead(mfd);
 	if (kstrtouint(buf, 0, &pdata->panel_info.panel_force_dead))
 		pr_err("kstrtouint buf error!\n");
 
@@ -753,100 +752,6 @@ static ssize_t mdss_fb_get_dfps_mode(struct device *dev,
 	return ret;
 }
 
-static ssize_t mdss_fb_get_ACL(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int ret,acl_mode;
-	acl_mode = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_ACL,
-			NULL);
-
-	ret = scnprintf(buf, PAGE_SIZE, "ACL current mode %d\n"
-											"0--ACL OFF\n"
-											"1--ACL 50\n"
-											"2--ALC 40\n"
-											"3--ACL 30\n", 
-											acl_mode);
-
-	return ret;
-}
-
-static ssize_t mdss_fb_set_ACL(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int rc = 0;
-	int state = 0;
-
-	rc = kstrtoint(buf, 10, &state);
-	if (rc) {
-		pr_err("kstrtoint failed. rc=%d\n", rc);
-		return rc;
-	}
-
-	pr_err("ACL = %d\n", state);
-
-	rc = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_SET_ACL,
-		(void *)(unsigned long)state);
-	if (rc) {
-		pr_warn("unable to set ACL(%d)\n", state);
-	}
-
-	return count;
-}
-
-static DEVICE_ATTR(acl, S_IRUGO | S_IWUSR | S_IWGRP,
-	mdss_fb_get_ACL, mdss_fb_set_ACL);
-
-
-
-static ssize_t mdss_fb_get_max_brightness(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int ret = 0;
-	int level = 0;
-
-	level = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_GET_MAX_BRIGHTNESS,
-			NULL);
-
-	ret=scnprintf(buf, PAGE_SIZE, "max brightness level = %d\n"
-					                        "0-->max brightness level 380nit\n"
-											"1-->max brightness level 430nit\n"
-											"2-->HBM Enabled\n",
-											level&0x000F);
-	return ret;
-}
-
-static ssize_t mdss_fb_set_max_brightness(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = fbi->par;
-	int rc = 0;
-	int level = 0;
-
-	rc = kstrtoint(buf, 16, &level);
-	if (rc) {
-		pr_err("kstrtoint failed. rc=%d\n", rc);
-		return rc;
-	}
-
-	pr_err("Max Brightness Setting = 0x%02X\n", level);
-    rc = mdss_fb_send_panel_event(mfd, MDSS_EVENT_PANEL_SET_MAX_BRIGHTNESS,
-	    (void *)(unsigned long)level);
-	if (rc)
-		pr_err("Fail to set max brihtness level 0x%02X\n", level);
-
-	return count;
-}
-
-static DEVICE_ATTR(hbm, S_IRUGO | S_IWUSR,
-	mdss_fb_get_max_brightness, mdss_fb_set_max_brightness);
-
 static DEVICE_ATTR(msm_fb_type, S_IRUGO, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, S_IRUGO | S_IWUSR, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -874,8 +779,6 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_thermal_level.attr,
 	&dev_attr_msm_fb_panel_status.attr,
 	&dev_attr_msm_fb_dfps_mode.attr,
-	&dev_attr_acl.attr,
-	&dev_attr_hbm.attr,
 	NULL,
 };
 
@@ -1649,10 +1552,7 @@ void mdss_fb_update_backlight(struct msm_fb_data_type *mfd)
 	bool bl_notify = false;
 
 	if (!mfd->unset_bl_level)
-		{
-			mfd->allow_bl_update = true;
-			return;
-		}
+		return;
 	mutex_lock(&mfd->bl_lock);
 	if (!mfd->allow_bl_update) {
 		pdata = dev_get_platdata(&mfd->pdev->dev);
@@ -1876,11 +1776,6 @@ static int mdss_fb_blank_unblank(struct msm_fb_data_type *mfd)
 	}
 
 error:
-	{
-		struct mdss_mdp_ctl *ctl = mfd_to_ctl(mfd);
-		if (!ctl->panel_data->panel_info.cont_splash_enabled)
-		mfd->first_frame = 1;
-	}
 	return ret;
 }
 
@@ -3532,6 +3427,7 @@ static int __mdss_fb_perform_commit(struct msm_fb_data_type *mfd)
 	struct msm_fb_backup_type *fb_backup = &mfd->msm_fb_backup;
 	int ret = -ENOSYS;
 	u32 new_dsi_mode, dynamic_dsi_switch = 0;
+
 	if (!sync_pt_data->async_wait_fences)
 		mdss_fb_wait_for_fence(sync_pt_data);
 	sync_pt_data->flushed = false;
@@ -3573,11 +3469,6 @@ static int __mdss_fb_perform_commit(struct msm_fb_data_type *mfd)
 			pr_err("pan display failed %x on fb%d\n", ret,
 					mfd->index);
 	}
-	if(mfd->first_frame)
-		{
-			mfd->first_frame = 0;
-			mdss_fb_send_panel_event(mfd, MDSS_EVENT_POST_PANEL_ON, NULL);
-		}
 	if (!ret)
 		mdss_fb_update_backlight(mfd);
 
