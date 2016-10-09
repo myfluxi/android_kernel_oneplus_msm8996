@@ -1985,6 +1985,10 @@ static int mdss_mdp_cmd_panel_on(struct mdss_mdp_ctl *ctl,
 			(void *)&ctx->intf_recovery,
 			CTL_INTF_EVENT_FLAG_DEFAULT);
 
+		mdss_mdp_ctl_intf_event(ctl,
+			MDSS_EVENT_POST_PANEL_ON,
+			NULL, CTL_INTF_EVENT_FLAG_DEFAULT);
+
 		ctx->intf_stopped = 0;
 		if (sctx)
 			sctx->intf_stopped = 0;
