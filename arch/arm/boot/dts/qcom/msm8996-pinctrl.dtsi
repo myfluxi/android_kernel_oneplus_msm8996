@@ -1049,8 +1049,8 @@
 			};
 		};
 
-		spi_11 {
-			spi_11_active: spi_11_active {
+		spi_12 {
+			spi_12_active: spi_12_active {
 				mux {
 					pins = "gpio85", "gpio86", "gpio87",
 								"gpio88";
@@ -1065,7 +1065,7 @@
 				};
 			};
 
-			spi_11_sleep: spi_11_sleep {
+			spi_12_sleep: spi_12_sleep {
 				mux {
 					pins = "gpio85", "gpio86", "gpio87",
 								"gpio88";
@@ -1534,24 +1534,24 @@
 		quat_mi2s {
 			quat_mi2s_sleep: quat_mi2s_sleep {
 				mux {
-					pins = "gpio58", "gpio59", "gpio61";
+					pins = "gpio58", "gpio59";
 					function = "qua_mi2s";
 				};
 
 				config {
-					pins = "gpio58", "gpio59", "gpio61";
+					pins = "gpio58", "gpio59";
 					drive-strength = <2>;   /* 2 mA */
 					bias-pull-down;         /* PULL DOWN */
 				};
 			};
 			quat_mi2s_active: quat_mi2s_active {
 				mux {
-					pins = "gpio58", "gpio59", "gpio61";
+					pins = "gpio58", "gpio59";
 					function = "qua_mi2s";
 				};
 
 				config {
-					pins = "gpio58", "gpio59", "gpio61";
+					pins = "gpio58", "gpio59";
 					drive-strength = <8>;   /* 8 mA */
 					bias-disable;           /* NO PULL */
 					output-high;
