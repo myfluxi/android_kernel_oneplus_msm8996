@@ -2216,3 +2216,7 @@
 	/delete-property/ qcom,force-reg-dump;
 };
 //msm8996-coresight-v3.dtsi end
+
+&msm_gpu {
+	qcom,l2pc-cpu-mask = <0x0000000C>;
+};
