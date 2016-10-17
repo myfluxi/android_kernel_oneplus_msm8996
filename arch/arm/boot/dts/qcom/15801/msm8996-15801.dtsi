@@ -2220,3 +2220,7 @@
 &msm_gpu {
 	qcom,l2pc-cpu-mask = <0x0000000C>;
 };
+
+&msm_vidc {
+	qcom,pm-qos-latency-us = <501>;
+};
