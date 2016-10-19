@@ -101,5 +101,7 @@
 		qcom,panel-allow-phy-poweroff;
 		qcom,partial-update-enabled;
 		qcom,panel-roi-alignment = <360 64 360 64 360 64>;
+		qcom,mdss-dsi-srgb-on-command = [39 01 00 00 00 00 02 57 4C];
+		qcom,mdss-dsi-srgb-off-command = [39 01 00 00 00 00 02 57 40];
 	};
 };

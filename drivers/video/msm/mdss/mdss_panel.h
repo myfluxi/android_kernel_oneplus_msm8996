@@ -261,6 +261,7 @@ enum mdss_intf_events {
 	MDSS_EVENT_DSI_RECONFIG_CMD,
 	MDSS_EVENT_DSI_RESET_WRITE_PTR,
 	MDSS_EVENT_PANEL_TIMING_SWITCH,
+	MDSS_EVENT_PANEL_SET_SRGB_MODE,
 };
 
 struct lcd_panel_info {
@@ -655,6 +656,7 @@ struct mdss_panel_info {
 	bool is_lpm_mode;
 	bool is_split_display; /* two DSIs in one display, pp split or not */
 	bool use_pingpong_split;
+	bool srgb_enabled;
 
 	/*
 	 * index[0] = left layer mixer, value of 0 not valid
