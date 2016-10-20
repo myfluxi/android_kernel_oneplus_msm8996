@@ -34,17 +34,21 @@ enum {
 	Opt_userid,
 	Opt_reserved_mb,
 	Opt_err,
+	Opt_label,
+	Opt_type,
 };
 
 static const match_table_t sdcardfs_tokens = {
-	{Opt_fsuid, "fsuid=%u"},
-	{Opt_fsgid, "fsgid=%u"},
+	{Opt_fsuid, "low_uid=%u"},
+	{Opt_fsgid, "low_gid=%u"},
 	{Opt_gid, "gid=%u"},
 	{Opt_debug, "debug"},
 	{Opt_mask, "mask=%u"},
 	{Opt_userid, "userid=%d"},
-	{Opt_multiuser, "multiuser"},
+	{Opt_multiuser, "multi_user"},
 	{Opt_reserved_mb, "reserved_mb=%u"},
+	{Opt_label, "label=%s"},
+	{Opt_type, "type=%s"},
 	{Opt_err, NULL}
 };
 
@@ -113,6 +117,9 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 			if (match_int(&args[0], &option))
 				return 0;
 			opts->reserved_mb = option;
+			break;
+		case Opt_label:
+		case Opt_type:
 			break;
 		/* unknown option */
 		default:
