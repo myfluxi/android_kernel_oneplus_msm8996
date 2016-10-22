@@ -1043,7 +1043,10 @@
 &pmi8994_haptics {
 	status = "okay";
 	qcom,actuator-type = "erm";
-	qcom,vmax-mv = <2700>;
+	qcom,vmax-mv = <3000>;
+	qcom,vmax-strong-mv = <3000>;
+	qcom,vmax-light-mv = <2000>;
+	qcom,timeout-strong-threshold = <330>;
 };
 
 &pmi8994_flash0 {
