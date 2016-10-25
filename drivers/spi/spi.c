@@ -1184,7 +1184,7 @@ static int spi_queued_transfer(struct spi_device *spi, struct spi_message *msg)
 
 	list_add_tail(&msg->queue, &master->queue);
 	if (!master->busy)
-		queue_kthread_work(&master->kworker, &master->pump_messages);
+		kthread_queue_work(&master->kworker, &master->pump_messages);
 
 	spin_unlock_irqrestore(&master->queue_lock, flags);
 	return 0;
