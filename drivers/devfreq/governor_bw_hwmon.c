@@ -795,7 +795,7 @@ static int devfreq_bw_hwmon_ev_handler(struct devfreq *df,
 		/*
 		 * Suspend/resume the HW monitor around the interval update
 		 * to prevent the HW monitor IRQ from trying to change
-		 * stop/start the delayed workqueue while the interval update
+		 * stop/start the kthread delayed work while the interval update
 		 * is happening.
 		 */
 		node = df->data;

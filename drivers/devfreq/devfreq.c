@@ -20,7 +20,7 @@
 #include <linux/stat.h>
 #include <linux/pm_opp.h>
 #include <linux/devfreq.h>
-#include <linux/workqueue.h>
+#include <linux/kthread.h>
 #include <linux/platform_device.h>
 #include <linux/list.h>
 #include <linux/printk.h>
@@ -30,11 +30,11 @@
 static struct class *devfreq_class;
 
 /*
- * devfreq core provides delayed work based load monitoring helper
- * functions. Governors can use these or can implement their own
- * monitoring mechanism.
+ * devfreq core provides kthread delayed work based load monitoring
+ * helper functions. Governors can use these or can implement their
+ * own monitoring mechanism.
  */
-static struct workqueue_struct *devfreq_wq;
+static struct kthread_worker *devfreq_worker;
 
 /* The list of all device-devfreq governors */
 static LIST_HEAD(devfreq_governor_list);
@@ -236,7 +236,7 @@ EXPORT_SYMBOL(update_devfreq);
  * @work:	the work struct used to run devfreq_monitor periodically.
  *
  */
-static void devfreq_monitor(struct work_struct *work)
+static void devfreq_monitor(struct kthread_work *work)
 {
 	int err;
 	struct devfreq *devfreq = container_of(work,
@@ -247,7 +247,7 @@ static void devfreq_monitor(struct work_struct *work)
 	if (err)
 		dev_err(&devfreq->dev, "dvfs failed with (%d) error\n", err);
 
-	queue_delayed_work(devfreq_wq, &devfreq->work,
+	kthread_queue_delayed_work(devfreq_worker, &devfreq->work,
 				msecs_to_jiffies(devfreq->profile->polling_ms));
 	mutex_unlock(&devfreq->lock);
 }
@@ -257,15 +257,15 @@ static void devfreq_monitor(struct work_struct *work)
  * @devfreq:	the devfreq instance.
  *
  * Helper function for starting devfreq device load monitoing. By
- * default delayed work based monitoring is supported. Function
+ * default kthread delayed work based monitoring is supported. Function
  * to be called from governor in response to DEVFREQ_GOV_START
  * event when device is added to devfreq framework.
  */
 void devfreq_monitor_start(struct devfreq *devfreq)
 {
-	INIT_DEFERRABLE_WORK(&devfreq->work, devfreq_monitor);
+	kthread_init_delayed_work(&devfreq->work, devfreq_monitor);
 	if (devfreq->profile->polling_ms)
-		queue_delayed_work(devfreq_wq, &devfreq->work,
+		kthread_queue_delayed_work(devfreq_worker, &devfreq->work,
 			msecs_to_jiffies(devfreq->profile->polling_ms));
 }
 EXPORT_SYMBOL(devfreq_monitor_start);
@@ -280,7 +280,7 @@ EXPORT_SYMBOL(devfreq_monitor_start);
  */
 void devfreq_monitor_stop(struct devfreq *devfreq)
 {
-	cancel_delayed_work_sync(&devfreq->work);
+	kthread_cancel_delayed_work_sync(&devfreq->work);
 }
 EXPORT_SYMBOL(devfreq_monitor_stop);
 
@@ -307,7 +307,7 @@ void devfreq_monitor_suspend(struct devfreq *devfreq)
 	devfreq_update_status(devfreq, devfreq->previous_freq);
 	devfreq->stop_polling = true;
 	mutex_unlock(&devfreq->lock);
-	cancel_delayed_work_sync(&devfreq->work);
+	kthread_cancel_delayed_work_sync(&devfreq->work);
 }
 EXPORT_SYMBOL(devfreq_monitor_suspend);
 
@@ -327,9 +327,8 @@ void devfreq_monitor_resume(struct devfreq *devfreq)
 	if (!devfreq->stop_polling)
 		goto out;
 
-	if (!delayed_work_pending(&devfreq->work) &&
-			devfreq->profile->polling_ms)
-		queue_delayed_work(devfreq_wq, &devfreq->work,
+	if (devfreq->profile->polling_ms)
+		kthread_queue_delayed_work(devfreq_worker, &devfreq->work,
 			msecs_to_jiffies(devfreq->profile->polling_ms));
 
 	devfreq->last_stat_updated = jiffies;
@@ -366,13 +365,13 @@ void devfreq_interval_update(struct devfreq *devfreq, unsigned int *delay)
 	/* if new delay is zero, stop polling */
 	if (!new_delay) {
 		mutex_unlock(&devfreq->lock);
-		cancel_delayed_work_sync(&devfreq->work);
+		kthread_cancel_delayed_work_sync(&devfreq->work);
 		return;
 	}
 
 	/* if current delay is zero, start polling with new delay */
 	if (!cur_delay) {
-		queue_delayed_work(devfreq_wq, &devfreq->work,
+		kthread_queue_delayed_work(devfreq_worker, &devfreq->work,
 			msecs_to_jiffies(devfreq->profile->polling_ms));
 		goto out;
 	}
@@ -380,10 +379,10 @@ void devfreq_interval_update(struct devfreq *devfreq, unsigned int *delay)
 	/* if current delay is greater than new delay, restart polling */
 	if (cur_delay > new_delay) {
 		mutex_unlock(&devfreq->lock);
-		cancel_delayed_work_sync(&devfreq->work);
+		kthread_cancel_delayed_work_sync(&devfreq->work);
 		mutex_lock(&devfreq->lock);
 		if (!devfreq->stop_polling)
-			queue_delayed_work(devfreq_wq, &devfreq->work,
+			kthread_queue_delayed_work(devfreq_worker, &devfreq->work,
 			      msecs_to_jiffies(devfreq->profile->polling_ms));
 	}
 out:
@@ -1084,18 +1083,23 @@ ATTRIBUTE_GROUPS(devfreq);
 
 static int __init devfreq_init(void)
 {
+	struct sched_param param = { .sched_priority = 5 };
+	unsigned int flags = KTW_FREEZABLE;
+
 	devfreq_class = class_create(THIS_MODULE, "devfreq");
 	if (IS_ERR(devfreq_class)) {
 		pr_err("%s: couldn't create class\n", __FILE__);
 		return PTR_ERR(devfreq_class);
 	}
 
-	devfreq_wq = create_freezable_workqueue("devfreq_wq");
-	if (!devfreq_wq) {
+	devfreq_worker = kthread_create_worker(flags, "devfreq_worker");
+	if (IS_ERR(devfreq_worker)) {
 		class_destroy(devfreq_class);
-		pr_err("%s: couldn't create workqueue\n", __FILE__);
-		return -ENOMEM;
+		pr_err("%s: couldn't create devfreq worker\n", __FILE__);
+		return PTR_ERR(devfreq_worker);
 	}
+	sched_setscheduler(devfreq_worker->task, SCHED_FIFO, &param);
+
 	devfreq_class->dev_groups = devfreq_groups;
 
 	return 0;
@@ -1105,7 +1109,7 @@ subsys_initcall(devfreq_init);
 static void __exit devfreq_exit(void)
 {
 	class_destroy(devfreq_class);
-	destroy_workqueue(devfreq_wq);
+	kthread_destroy_worker(devfreq_worker);
 }
 module_exit(devfreq_exit);
 

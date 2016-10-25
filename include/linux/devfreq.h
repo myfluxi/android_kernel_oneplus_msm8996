@@ -14,6 +14,7 @@
 #define __LINUX_DEVFREQ_H__
 
 #include <linux/device.h>
+#include <linux/kthread.h>
 #include <linux/notifier.h>
 #include <linux/pm_opp.h>
 
@@ -134,7 +135,7 @@ struct devfreq_governor {
  * @nb:		notifier block used to notify devfreq object that it should
  *		reevaluate operable frequencies. Devfreq users may use
  *		devfreq.nb to the corresponding register notifier call chain.
- * @work:	delayed work for load monitoring.
+ * @work:	delayed kthread work for load monitoring.
  * @previous_freq:	previously configured frequency value.
  * @data:	Private data of the governor. The devfreq framework does not
  *		touch this.
@@ -163,7 +164,7 @@ struct devfreq {
 	const struct devfreq_governor *governor;
 	char governor_name[DEVFREQ_NAME_LEN];
 	struct notifier_block nb;
-	struct delayed_work work;
+	struct kthread_delayed_work work;
 
 	unsigned long previous_freq;
 
