@@ -220,24 +220,6 @@ static void mdss_dsi_panel_bklt_dcs(struct mdss_dsi_ctrl_pdata *ctrl, int level)
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
 
-void mdss_dsi_panel_set_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl,
-		bool enable)
-{
-	struct mdss_panel_info *pinfo = &(ctrl->panel_data.panel_info);
-
-	pinfo->srgb_enabled = enable;
-
-	if (!ctrl->srgb_on_cmds.cmd_cnt || !ctrl->srgb_off_cmds.cmd_cnt)
-		return;
-
-	if (enable)
-		mdss_dsi_panel_cmds_send(ctrl,
-			&ctrl->srgb_on_cmds, CMD_REQ_COMMIT);
-	else
-		mdss_dsi_panel_cmds_send(ctrl,
-			&ctrl->srgb_off_cmds, CMD_REQ_COMMIT);
-}
-
 static int mdss_dsi_request_gpios(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
 	int rc = 0;
@@ -745,8 +727,6 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 
 	if (on_cmds->cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, on_cmds, CMD_REQ_COMMIT);
-	if (pinfo->srgb_enabled)
-		mdss_dsi_panel_set_srgb_mode(ctrl, true);
 	if (pinfo->compression_mode == COMPRESSION_DSC)
 		mdss_dsi_panel_dsc_pps_send(ctrl, pinfo);
 
@@ -2177,16 +2157,6 @@ exit:
 	return rc;
 }
 
-static void mdss_dsi_parse_srgb_commands(struct device_node *np,
-	struct mdss_dsi_ctrl_pdata *ctrl)
-{
-	mdss_dsi_parse_dcs_cmds(np, &ctrl->srgb_on_cmds,
-			"qcom,mdss-dsi-srgb-on-command", NULL);
-
-	mdss_dsi_parse_dcs_cmds(np, &ctrl->srgb_off_cmds,
-			"qcom,mdss-dsi-srgb-off-command", NULL);
-}
-
 static int mdss_panel_parse_dt(struct device_node *np,
 			struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -2396,8 +2366,6 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_panel_horizintal_line_idle(np, ctrl_pdata);
 
 	mdss_dsi_parse_dfps_config(np, ctrl_pdata);
-
-	mdss_dsi_parse_srgb_commands(np, ctrl_pdata);
 
 	pinfo->is_dba_panel = of_property_read_bool(np,
 			"qcom,dba-panel");

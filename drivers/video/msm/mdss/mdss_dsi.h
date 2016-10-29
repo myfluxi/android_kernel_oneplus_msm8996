@@ -466,8 +466,6 @@ struct mdss_dsi_ctrl_pdata {
 	struct dsi_panel_cmds post_panel_on_cmds;
 	struct dsi_panel_cmds off_cmds;
 	struct dsi_panel_cmds status_cmds;
-	struct dsi_panel_cmds srgb_on_cmds;
-	struct dsi_panel_cmds srgb_off_cmds;
 	u32 status_cmds_rlen;
 	u32 *status_value;
 	u32 status_error_count;
@@ -656,8 +654,6 @@ void mdss_dsi_panel_dsc_pps_send(struct mdss_dsi_ctrl_pdata *ctrl,
 void mdss_dsi_dsc_config(struct mdss_dsi_ctrl_pdata *ctrl,
 	struct dsc_desc *dsc);
 void mdss_dsi_dfps_config_8996(struct mdss_dsi_ctrl_pdata *ctrl);
-void mdss_dsi_panel_set_srgb_mode(struct mdss_dsi_ctrl_pdata *ctrl,
-		bool enable);
 void mdss_dsi_set_burst_mode(struct mdss_dsi_ctrl_pdata *ctrl);
 
 static inline const char *__mdss_dsi_pm_name(enum dsi_pm_type module)

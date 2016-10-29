@@ -2575,9 +2575,6 @@ static int mdss_dsi_event_handler(struct mdss_panel_data *pdata,
 					&ctrl_pdata->dba_work, HZ);
 		}
 		break;
-	case MDSS_EVENT_PANEL_SET_SRGB_MODE:
-		mdss_dsi_panel_set_srgb_mode(ctrl_pdata, (bool) arg);
-		break;
 	default:
 		pr_debug("%s: unhandled event=%d\n", __func__, event);
 		break;

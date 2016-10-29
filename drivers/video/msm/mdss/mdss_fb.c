@@ -752,51 +752,6 @@ static ssize_t mdss_fb_get_dfps_mode(struct device *dev,
 	return ret;
 }
 
-static ssize_t mdss_fb_get_srgb_mode(struct device *dev,
-		struct device_attribute *attr, char *buf)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct mdss_panel_data *pdata;
-	struct mdss_panel_info *pinfo;
-	int ret;
-
-	pdata = dev_get_platdata(&mfd->pdev->dev);
-	if (!pdata) {
-		pr_err("no panel connected!\n");
-		return -EINVAL;
-	}
-	pinfo = &pdata->panel_info;
-
-	ret = scnprintf(buf, PAGE_SIZE, "srgb enabled=%d\n",
-		pinfo->srgb_enabled);
-
-	return ret;
-}
-
-static ssize_t mdss_fb_set_srgb_mode(struct device *dev,
-	struct device_attribute *attr, const char *buf, size_t count)
-{
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	int rc;
-	int enable;
-
-	rc = kstrtoint(buf, 10, &enable);
-	if (rc) {
-		pr_err("kstrtoint failed. rc=%d\n", rc);
-		return rc;
-	}
-
-	rc = mdss_fb_send_panel_event(mfd,
-			MDSS_EVENT_PANEL_SET_SRGB_MODE,
-			(void *)(bool) !!enable);
-	if (rc)
-		pr_err("Set sRGB mode failed: %d\n", enable);
-
-	return count;
-}
-
 static DEVICE_ATTR(msm_fb_type, S_IRUGO, mdss_fb_get_type, NULL);
 static DEVICE_ATTR(msm_fb_split, S_IRUGO | S_IWUSR, mdss_fb_show_split,
 					mdss_fb_store_split);
@@ -813,8 +768,6 @@ static DEVICE_ATTR(msm_fb_panel_status, S_IRUGO | S_IWUSR,
 	mdss_fb_get_panel_status, mdss_fb_force_panel_dead);
 static DEVICE_ATTR(msm_fb_dfps_mode, S_IRUGO | S_IWUSR,
 	mdss_fb_get_dfps_mode, mdss_fb_change_dfps_mode);
-static DEVICE_ATTR(SRGB, S_IRUGO | S_IWUSR,
-	mdss_fb_get_srgb_mode, mdss_fb_set_srgb_mode);
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_type.attr,
 	&dev_attr_msm_fb_split.attr,
@@ -826,7 +779,6 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_thermal_level.attr,
 	&dev_attr_msm_fb_panel_status.attr,
 	&dev_attr_msm_fb_dfps_mode.attr,
-	&dev_attr_SRGB.attr,
 	NULL,
 };
 
