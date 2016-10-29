@@ -23,8 +23,6 @@
 #include <linux/types.h>
 #include <linux/parser.h>
 
-#define SAMSUNG_SDCARD_FS
-
 enum {
 	Opt_fsuid,
 	Opt_fsgid,
@@ -36,34 +34,17 @@ enum {
 	Opt_userid,
 	Opt_reserved_mb,
 	Opt_err,
-#ifdef SAMSUNG_SDCARD_FS
-	Opt_label,
-	Opt_type,
-#endif
 };
 
 static const match_table_t sdcardfs_tokens = {
-#ifdef SAMSUNG_SDCARD_FS
-	{Opt_fsuid, "low_uid=%u"},
-	{Opt_fsgid, "low_gid=%u"},
-#else
 	{Opt_fsuid, "fsuid=%u"},
 	{Opt_fsgid, "fsgid=%u"},
-#endif
 	{Opt_gid, "gid=%u"},
 	{Opt_debug, "debug"},
 	{Opt_mask, "mask=%u"},
 	{Opt_userid, "userid=%d"},
-#ifdef SAMSUNG_SDCARD_FS
-	{Opt_multiuser, "multi_user"},
-#else
 	{Opt_multiuser, "multiuser"},
-#endif
 	{Opt_reserved_mb, "reserved_mb=%u"},
-#ifdef SAMSUNG_SDCARD_FS
-	{Opt_label, "label=%s"},
-	{Opt_type, "type=%s"},
-#endif
 	{Opt_err, NULL}
 };
 
@@ -133,11 +114,6 @@ static int parse_options(struct super_block *sb, char *options, int silent,
 				return 0;
 			opts->reserved_mb = option;
 			break;
-#ifdef SAMSUNG_SDCARD_FS
-		case Opt_label:
-		case Opt_type:
-			break;
-#endif
 		/* unknown option */
 		default:
 			if (!silent) {
