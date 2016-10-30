@@ -38,7 +38,6 @@
 #include "../codecs/wcd9330.h"
 #include "../codecs/wcd9335.h"
 #include "../codecs/wsa881x.h"
-#include <sound/sounddebug.h>
 
 #define DRV_NAME "msm8996-asoc-snd"
 
@@ -2221,8 +2220,8 @@ static const struct snd_kcontrol_new msm_snd_controls[] = {
 			quat_mi2s_sample_rate_get, quat_mi2s_sample_rate_put),
 	SOC_ENUM_EXT("QUAT_MI2S_RX Channels", msm8996_mi2s_snd_enum[8],
 			msm_quat_mi2s_rx_ch_get, msm_quat_mi2s_rx_ch_put),
-    SOC_ENUM_EXT("QUAT_MI2S_TX Channels", msm8996_mi2s_snd_enum[9],
-            msm_quat_mi2s_tx_ch_get, msm_quat_mi2s_tx_ch_put),
+	SOC_ENUM_EXT("QUAT_MI2S_TX Channels", msm8996_mi2s_snd_enum[9],
+			msm_quat_mi2s_tx_ch_get, msm_quat_mi2s_tx_ch_put),
 };
 
 static bool msm8996_swap_gnd_mic(struct snd_soc_codec *codec)

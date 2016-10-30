@@ -347,7 +347,7 @@ enum {
 	AIF4_SWITCH_VALUE,
 	AUDIO_NOMINAL,
 	CPE_NOMINAL,
-    HPH_PA_DELAY,
+	HPH_PA_DELAY,
 	SB_CLK_GEAR,
 	ANC_MIC_AMIC1,
 	ANC_MIC_AMIC2,
@@ -799,8 +799,8 @@ struct tasha_priv {
 	int spkr_mode;
 	struct hpf_work tx_hpf_work[TASHA_NUM_DECIMATORS];
 	struct tx_mute_work tx_mute_dwork[TASHA_NUM_DECIMATORS];
-    int hph_l_gain;
-    int hph_r_gain;
+	int hph_l_gain;
+	int hph_r_gain;
 	int rx_7_count;
 	int rx_8_count;
 };
