@@ -31,10 +31,11 @@
 #include <linux/ktime.h>
 #include <linux/power_supply.h>
 #include <linux/of_batterydata.h>
-#include <linux/spinlock.h>
 #include <linux/string_helpers.h>
 #include <linux/alarmtimer.h>
 #include <linux/qpnp/qpnp-revid.h>
+
+#include "oem_external_fg.h"
 
 /* Register offsets */
 
@@ -299,7 +300,7 @@ enum fg_mem_backup_index {
 
 static struct fg_mem_data fg_backup_regs[FG_BACKUP_MAX] = {
 	/*       ID           Address, Offset, Length, Value*/
-	BACKUP(SOC,		0x564,   0,      24,     -EINVAL),
+	BACKUP(SOC,		0x560,   0,      28,     -EINVAL),
 	BACKUP(CYCLE_COUNT,	0x5E8,   0,      16,     -EINVAL),
 	BACKUP(CC_SOC_COEFF,	0x5BC,   0,      8,     -EINVAL),
 	BACKUP(IGAIN,		0x424,   0,      4,     -EINVAL),
@@ -409,6 +410,21 @@ static struct register_offset offset[] = {
 		((chip)->mem_base + (chip)->offset[MEM_INTF_RD_DATA0])
 #define MEM_INTF_WR_DATA0(chip) \
 		((chip)->mem_base + (chip)->offset[MEM_INTF_WR_DATA0])
+
+static struct external_battery_gauge *ext_fg;
+
+void external_battery_gauge_register(struct external_battery_gauge *batt_gauge)
+{
+	if (ext_fg)
+		pr_err("qpnp-charger %s multiple battery gauge called\n",
+								__func__);
+	ext_fg = batt_gauge;
+}
+
+void external_battery_gauge_unregister(struct external_battery_gauge *batt_gauge)
+{
+	ext_fg = NULL;
+}
 
 struct fg_wakeup_source {
 	struct wakeup_source	source;
@@ -3233,7 +3249,10 @@ static int fg_power_get_property(struct power_supply *psy,
 			val->strval = chip->batt_type;
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY:
-		val->intval = get_prop_capacity(chip);
+		if (ext_fg && ext_fg->get_battery_soc)
+			val->intval = ext_fg->get_battery_soc();
+		else
+			val->intval = get_prop_capacity(chip);
 		break;
 	case POWER_SUPPLY_PROP_CAPACITY_RAW:
 		val->intval = get_sram_prop_now(chip, FG_DATA_BATT_SOC);
@@ -3242,10 +3261,16 @@ static int fg_power_get_property(struct power_supply *psy,
 		val->intval = get_sram_prop_now(chip, FG_DATA_VINT_ERR);
 		break;
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
-		val->intval = get_sram_prop_now(chip, FG_DATA_CURRENT);
+		if (ext_fg && ext_fg->get_average_current)
+			val->intval = ext_fg->get_average_current();
+		else
+			val->intval = get_sram_prop_now(chip, FG_DATA_CURRENT);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
-		val->intval = get_sram_prop_now(chip, FG_DATA_VOLTAGE);
+		if (ext_fg && ext_fg->get_battery_mvolts)
+			val->intval = ext_fg->get_battery_mvolts();
+		else
+			val->intval = get_sram_prop_now(chip, FG_DATA_VOLTAGE);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_OCV:
 		val->intval = get_sram_prop_now(chip, FG_DATA_OCV);
@@ -3254,7 +3279,10 @@ static int fg_power_get_property(struct power_supply *psy,
 		val->intval = chip->batt_max_voltage_uv;
 		break;
 	case POWER_SUPPLY_PROP_TEMP:
-		val->intval = get_sram_prop_now(chip, FG_DATA_BATT_TEMP);
+		if (ext_fg && ext_fg->get_battery_temperature)
+			val->intval = ext_fg->get_battery_temperature();
+		else
+			val->intval = get_sram_prop_now(chip, FG_DATA_BATT_TEMP);
 		break;
 	case POWER_SUPPLY_PROP_COOL_TEMP:
 		val->intval = get_prop_jeita_temp(chip, FG_MEM_SOFT_COLD);
@@ -4226,6 +4254,8 @@ static int fg_init_batt_temp_state(struct fg_chip *chip)
 	return rc;
 }
 
+static void oem_update_cc_cv_setpoint(struct fg_chip *chip, int cv_float_point);
+
 static int fg_power_set_property(struct power_supply *psy,
 				  enum power_supply_property psp,
 				  const union power_supply_propval *val)
@@ -4259,6 +4289,17 @@ static int fg_power_set_property(struct power_supply *psy,
 
 		if (chip->jeita_hysteresis_support)
 			fg_hysteresis_config(chip);
+		break;
+	case POWER_SUPPLY_PROP_CC_TO_CV_POINT:
+		oem_update_cc_cv_setpoint(chip, val->intval);
+		break;
+	case POWER_SUPPLY_PROP_SET_ALLOW_READ_EXTERN_FG_IIC:
+		if (ext_fg && ext_fg->set_alow_reading)
+			ext_fg->set_alow_reading(val->intval);
+		break;
+	case POWER_SUPPLY_PROP_UPDATE_LCD_IS_OFF:
+		if (ext_fg && ext_fg->set_lcd_off_status)
+			ext_fg->set_lcd_off_status(val->intval);
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_DONE:
 		chip->charge_done = val->intval;
@@ -5199,6 +5240,25 @@ static void update_cc_cv_setpoint(struct fg_chip *chip)
 	}
 	if (fg_debug_mask & FG_STATUS)
 		pr_info("Wrote %x %x to address %x for CC_CV setpoint\n",
+			tmp[0], tmp[1], CC_CV_SETPOINT_REG);
+}
+
+static void oem_update_cc_cv_setpoint(struct fg_chip *chip, int cv_float_point)
+{
+	int rc;
+	u8 tmp[2];
+
+	if (!cv_float_point)
+		return;
+	batt_to_setpoint_adc(cv_float_point, tmp);
+	rc = fg_mem_write(chip, tmp, CC_CV_SETPOINT_REG, 2,
+				CC_CV_SETPOINT_OFFSET, 0);
+	if (rc) {
+		pr_err("failed to write CC_CV_VOLT rc=%d\n", rc);
+		return;
+	}
+	if (fg_debug_mask & FG_STATUS)
+		pr_info("oem Wrote %x %x to address %x for CC_CV setpoint\n",
 			tmp[0], tmp[1], CC_CV_SETPOINT_REG);
 }
 
@@ -7850,7 +7910,8 @@ static int fg_setup_memif_offset(struct fg_chip *chip)
 		return rc;
 	}
 
-	switch (chip->revision[DIG_MAJOR]) {
+	dig_major = chip->revision[DIG_MAJOR];
+	switch (dig_major) {
 	case DIG_REV_1:
 	case DIG_REV_2:
 		chip->offset = offset[0].address;
