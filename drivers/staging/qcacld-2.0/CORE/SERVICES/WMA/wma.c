@@ -21034,7 +21034,7 @@ wma_wow_get_pkt_proto_subtype(uint8_t *data,
 	uint16_t ether_type = (uint16_t)(*(uint16_t *)(data +
 				ADF_NBUF_TRAC_ETH_TYPE_OFFSET));
 
-	WMA_LOGE("Ether Type: 0x%04x",
+	WMA_LOGD("Ether Type: 0x%04x",
 		adf_os_cpu_to_be16(ether_type));
 
 	if (ADF_NBUF_TRAC_EAPOL_ETH_TYPE ==
@@ -21057,7 +21057,7 @@ wma_wow_get_pkt_proto_subtype(uint8_t *data,
 			uint8_t proto_type;
 
 			proto_type = adf_nbuf_data_get_ipv4_proto(data);
-			WMA_LOGE("IPV4_proto_type: %u", proto_type);
+			WMA_LOGD("IPV4_proto_type: %u", proto_type);
 			if (proto_type == ADF_NBUF_TRAC_ICMP_TYPE) {
 				if (len >= WMA_ICMP_SUBTYPE_GET_MIN_LEN)
 					return adf_nbuf_data_get_icmp_subtype(
@@ -21136,7 +21136,7 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 
 	WMA_LOGD("wow_buf_pkt_len: %u", buf_len);
 	if (buf_len >= ADF_NBUF_TRAC_IPV4_OFFSET)
-		WMA_LOGE("Src_mac: " MAC_ADDRESS_STR " Dst_mac: " MAC_ADDRESS_STR,
+		WMA_LOGD("Src_mac: " MAC_ADDRESS_STR " Dst_mac: " MAC_ADDRESS_STR,
 			MAC_ADDR_ARRAY(data + ADF_NBUF_SRC_MAC_OFFSET),
 			MAC_ADDR_ARRAY(data));
 	else
@@ -21148,14 +21148,14 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 	case ADF_PROTO_EAPOL_M2:
 	case ADF_PROTO_EAPOL_M3:
 	case ADF_PROTO_EAPOL_M4:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		if (buf_len >= WMA_EAPOL_INFO_GET_MIN_LEN) {
 			pkt_len = (uint16_t)(*(uint16_t *)(data +
 				EAPOL_PKT_LEN_OFFSET));
 			key_len = (uint16_t)(*(uint16_t *)(data +
 				EAPOL_KEY_LEN_OFFSET));
-			WMA_LOGE("Pkt_len: %u, Key_len: %u",
+			WMA_LOGD("Pkt_len: %u, Key_len: %u",
 				adf_os_cpu_to_be16(pkt_len),
 				adf_os_cpu_to_be16(key_len));
 		}
@@ -21176,7 +21176,7 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 				DHCP_PKT_LEN_OFFSET));
 			transaction_id = (uint32_t)(*(uint32_t *)(data +
 				DHCP_TRANSACTION_ID_OFFSET));
-			WMA_LOGE("Pkt_len: %u, Transaction_id: %u",
+			WMA_LOGD("Pkt_len: %u, Transaction_id: %u",
 				adf_os_cpu_to_be16(pkt_len),
 				adf_os_cpu_to_be32(transaction_id));
 		}
@@ -21184,20 +21184,20 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 
 	case ADF_PROTO_ARP_REQ:
 	case ADF_PROTO_ARP_RES:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		break;
 
 	case ADF_PROTO_ICMP_REQ:
 	case ADF_PROTO_ICMP_RES:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		if (buf_len >= WMA_IPV4_PKT_INFO_GET_MIN_LEN) {
 			pkt_len = (uint16_t)(*(uint16_t *)(data +
 				IPV4_PKT_LEN_OFFSET));
 			seq_num = (uint16_t)(*(uint16_t *)(data +
 				ICMP_SEQ_NUM_OFFSET));
-			WMA_LOGE("Pkt_len: %u, Seq_num: %u",
+			WMA_LOGD("Pkt_len: %u, Seq_num: %u",
 				adf_os_cpu_to_be16(pkt_len),
 				adf_os_cpu_to_be16(seq_num));
 		}
@@ -21205,14 +21205,14 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 
 	case ADF_PROTO_ICMPV6_REQ:
 	case ADF_PROTO_ICMPV6_RES:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		if (buf_len >= WMA_IPV6_PKT_INFO_GET_MIN_LEN) {
 			pkt_len = (uint16_t)(*(uint16_t *)(data +
 				IPV6_PKT_LEN_OFFSET));
 			seq_num = (uint16_t)(*(uint16_t *)(data +
 				ICMPV6_SEQ_NUM_OFFSET));
-			WMA_LOGE("Pkt_len: %u, Seq_num: %u",
+			WMA_LOGD("Pkt_len: %u, Seq_num: %u",
 				adf_os_cpu_to_be16(pkt_len),
 				adf_os_cpu_to_be16(seq_num));
 		}
@@ -21220,7 +21220,7 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 
 	case ADF_PROTO_IPV4_UDP:
 	case ADF_PROTO_IPV4_TCP:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		if (buf_len >= WMA_IPV4_PKT_INFO_GET_MIN_LEN) {
 			pkt_len = (uint16_t)(*(uint16_t *)(data +
@@ -21229,15 +21229,15 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 				IPV4_SRC_PORT_OFFSET));
 			dst_port = (uint16_t)(*(uint16_t *)(data +
 				IPV4_DST_PORT_OFFSET));
-			WMA_LOGE("Pkt_len: %u",
+			WMA_LOGD("Pkt_len: %u",
 				adf_os_cpu_to_be16(pkt_len));
-			WMA_LOGE("src_port: %u, dst_port: %u",
+			WMA_LOGD("src_port: %u, dst_port: %u",
 				adf_os_cpu_to_be16(src_port),
 				adf_os_cpu_to_be16(dst_port));
 			if (proto_subtype == ADF_PROTO_IPV4_TCP) {
 				tcp_seq_num = (uint32_t)(*(uint32_t *)(data +
 					IPV4_TCP_SEQ_NUM_OFFSET));
-				WMA_LOGE("TCP_seq_num: %u",
+				WMA_LOGD("TCP_seq_num: %u",
 					adf_os_cpu_to_be32(tcp_seq_num));
 			}
 		}
@@ -21245,7 +21245,7 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 
 	case ADF_PROTO_IPV6_UDP:
 	case ADF_PROTO_IPV6_TCP:
-		WMA_LOGE("WOW Wakeup: %s rcvd",
+		WMA_LOGD("WOW Wakeup: %s rcvd",
 			wma_pkt_proto_subtype_to_string(proto_subtype));
 		if (buf_len >= WMA_IPV6_PKT_INFO_GET_MIN_LEN) {
 			pkt_len = (uint16_t)(*(uint16_t *)(data +
@@ -21254,15 +21254,15 @@ static void wma_wow_parse_data_pkt_buffer(uint8_t *data,
 				IPV6_SRC_PORT_OFFSET));
 			dst_port = (uint16_t)(*(uint16_t *)(data +
 				IPV6_DST_PORT_OFFSET));
-			WMA_LOGE("Pkt_len: %u",
+			WMA_LOGD("Pkt_len: %u",
 				adf_os_cpu_to_be16(pkt_len));
-			WMA_LOGE("src_port: %u, dst_port: %u",
+			WMA_LOGD("src_port: %u, dst_port: %u",
 				adf_os_cpu_to_be16(src_port),
 				adf_os_cpu_to_be16(dst_port));
 			if (proto_subtype == ADF_PROTO_IPV6_TCP) {
 				tcp_seq_num = (uint32_t)(*(uint32_t *)(data +
 					IPV6_TCP_SEQ_NUM_OFFSET));
-				WMA_LOGE("TCP_seq_num: %u",
+				WMA_LOGD("TCP_seq_num: %u",
 					adf_os_cpu_to_be32(tcp_seq_num));
 			}
 		}
@@ -21410,7 +21410,7 @@ static int wma_wow_wakeup_host_event(void *handle, u_int8_t *event,
 	if ((wake_info->wake_reason != WOW_REASON_UNSPECIFIED) ||
 	    (wake_info->wake_reason == WOW_REASON_UNSPECIFIED &&
 	     !wmi_get_runtime_pm_inprogress(wma->wmi_handle)))
-		WMA_LOGA("WOW wakeup host event received (reason: %s(%d)) for vdev %d",
+		WMA_LOGD("WOW wakeup host event received (reason: %s(%d)) for vdev %d",
 			wma_wow_wake_reason_str(wake_info->wake_reason, wma),
 			wake_info->wake_reason,
 			wake_info->vdev_id);
